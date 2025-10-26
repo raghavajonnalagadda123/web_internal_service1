@@ -41,7 +41,7 @@ resource "aws_instance" "monitoring_vm" {
     systemctl start docker
 
     # Clone your monitoring repo and start Docker Compose
-    git clone https://github.com/kushwahvishal939/web_internal_service.git /home/deploy/monitoring
+    git clone https://github.com/raghavajonnalagadda123/web_internal_service1.git /home/deploy/monitoring
     cd /home/deploy/monitoring
     docker-compose up -d
 
