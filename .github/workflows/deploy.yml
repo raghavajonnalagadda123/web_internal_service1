@@ -1,0 +1,76 @@
+name: Deploy Bedrock to EC2
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          # Checkout to the root folder, not nested
+          path: .
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+
+      - name: Cache Composer Dependencies
+        uses: actions/cache@v4
+        with:
+          path: bedrock/vendor
+          key: ${{ runner.os }}-composer-${{ hashFiles('bedrock/composer.lock') }}
+          restore-keys: ${{ runner.os }}-composer-
+
+      - name: Install Composer Dependencies
+        working-directory: ./bedrock
+        run: composer install --no-dev --optimize-autoloader
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: bedrock/web/app/themes/sage/package-lock.json
+
+      - name: Build Sage Theme Assets
+        working-directory: ./bedrock/web/app/themes/sage
+        run: |
+          npm ci
+          npm run build
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          path: .
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /home/deploy/web_internal_service
+            git reset --hard HEAD
+            git pull origin main
+            cd bedrock
+            composer install --no-dev --optimize-autoloader
+            cd web/app/themes/sage
+            npm ci && npm run build
+            sudo chown -R www-data:www-data /home/deploy/web_internal_service
+            sudo systemctl restart apache2
+            if ! curl -f http://localhost; then
+              echo "Health check failed!"
+              exit 1
+            fi
+

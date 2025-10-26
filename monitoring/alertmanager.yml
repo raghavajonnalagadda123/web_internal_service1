@@ -1,0 +1,10 @@
+route:
+  receiver: 'slack_channel'
+
+receivers:
+- name: 'slack_channel'
+  slack_configs:
+  - send_resolved: true
+    channel: '#alerts'
+    username: 'PrometheusBot'
+    api_url: "https://hooks.slack.com/services/XXXXX/XXXXX/XXXXX"
