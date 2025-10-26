@@ -262,7 +262,7 @@ resource "aws_instance" "monitoring_vm" {
     apt install -y docker.io docker-compose
     systemctl enable docker
     systemctl start docker
-    git clone https://github.com/kushwahvishal939/web_internal_service.git /home/deploy/monitoring
+    git clone https://github.com/raghavajonnalagadda123/web_internal_service1 /home/deploy/monitoring
     cd /home/deploy/monitoring
     docker-compose up -d
   EOT
